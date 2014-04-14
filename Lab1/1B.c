@@ -23,6 +23,12 @@ typedef struct{
 	int from, where, amount;
 } path_node;
 
+/*
+	loader - loads data fron file
+	guider - calculates path
+	min - find minimumu
+	path_to_file - writes results to file
+*/
 inline void loader(indata *inputstruct, FILE *fstream) __attribute__((always_inline));
 inline int guider(path_node **n_p_Pointer, indata *inputstruct) __attribute__((always_inline));
 inline int min(int a, int b) __attribute__((always_inline));
@@ -55,13 +61,12 @@ inline int guider(path_node **n_ps_Pointer, indata *inputstruct){
 	
 	ressize = inputstruct->N + inputstruct->M - 1;
 	ressizecopy=ressize;
-
 	*n_ps_Pointer = (path_node*)malloc(ressize*sizeof(path_node));
 	localpointer = *n_ps_Pointer;
-	
 	bufP = inputstruct->P;
 	bufQ = inputstruct->Q;
-	
+
+	//North-West corner
 	for(int i=0; i< inputstruct->N; ++i,bufP++){
 		for(int j=0; j<inputstruct->M; ++j,bufQ++){
 			minimum = min((*bufP),(*bufQ));
@@ -103,12 +108,13 @@ int main(){
 	/*
 		infile - pointer to infile
 		outfile - pointer to outfile
+		indata - input data
+		nodes - input path
 	*/
 	FILE *infile, *outfile;
 	indata Bdata;
 	path_node *nodes;
 
-	
 	infile = NULL;
 	outfile = NULL;
 	nodes=NULL;
@@ -116,11 +122,8 @@ int main(){
 	infile = fopen ("input.txt","r");
 	outfile = fopen ("output.txt","w");
 	
-	
 	loader(&Bdata, infile);
 	int size = guider(&nodes, &Bdata);
-
-	
 	path_to_file(nodes, size, outfile);
 	
 	fclose(infile);
