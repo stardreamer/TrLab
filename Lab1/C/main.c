@@ -181,6 +181,12 @@ int main(){
 	}
 	else
 		path_to_file(curcyc.path, curcyc.plen, outfile);
+		
+	free(curcyc.basicpath);
+	free(curcyc.path);
+	free(curcyc.used);	
+	fclose(infile);
+	fclose(outfile);
 	
 	return 0;
 }
