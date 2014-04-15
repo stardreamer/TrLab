@@ -171,16 +171,16 @@ int main(){
 	outfile = fopen ("output.txt","w");
 	
 	loader(&(curcyc), infile);
-	if(!goH(&(curcyc), curcyc.curnode))
+	if(!goH(&(curcyc), curcyc.curnode)){
+		free(curcyc.basicpath);
+		free(curcyc.path);
+		free(curcyc.used);	
+		fclose(infile);
+		fclose(outfile);
 		return UNABLE_TO_FIND_PATH;
+	}
 	else
 		path_to_file(curcyc.path, curcyc.plen, outfile);
-	
-	free(curcyc.basicpath);
-	free(curcyc.path);
-	free(curcyc.used);	
-	fclose(infile);
-	fclose(outfile);
 	
 	return 0;
 }
