@@ -14,6 +14,19 @@ typedef struct{
 } path_node;
 
 typedef struct{
+	/*
+		i0 - start point P
+		j0 - start point Q
+		N - number of sources
+		M - number of recievers
+		bplen - length of basic path
+		plen - length of new path
+		ulen -length of used
+		cunode - current node
+		used - array of freedom
+		path - new path
+		basicpath - basic path
+	*/	
 	int i0,j0;
 	int M,N,bplen,plen,ulen;
 	int *used;
@@ -22,12 +35,12 @@ typedef struct{
 	path_node *basicpath;
 } cycle;
 
-int goH(cycle* cl, path_node node);
-int goV(cycle* cl, path_node node);
-inline int reductor(int i,int j,int l) __attribute__((always_inline));
-inline void loader(cycle *inputstruct, FILE *fstream) __attribute__((always_inline));
-inline int addNode(cycle* cl, path_node *node);
-inline void path_to_file(path_node *n_ps_Pointer, int size, FILE *outfile) __attribute__((always_inline));
+int goH(cycle* cl, path_node node); //go vertical
+int goV(cycle* cl, path_node node); //go horizontal
+inline int reductor(int i,int j,int l) __attribute__((always_inline)); 
+inline void loader(cycle *inputstruct, FILE *fstream) __attribute__((always_inline)); //load data from file
+inline int addNode(cycle* cl, path_node *node); //resize and add
+inline void path_to_file(path_node *n_ps_Pointer, int size, FILE *outfile) __attribute__((always_inline)); //write results to file
 
 
 inline void loader(cycle *inputstruct, FILE *fstream){
@@ -162,7 +175,10 @@ int main(){
 		return UNABLE_TO_FIND_PATH;
 	else
 		path_to_file(curcyc.path, curcyc.plen, outfile);
-
+	
+	free(curcyc.basicpath);
+	free(curcyc.path);
+	free(curcyc.used);	
 	fclose(infile);
 	fclose(outfile);
 	

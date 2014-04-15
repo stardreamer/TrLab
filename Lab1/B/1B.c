@@ -126,6 +126,9 @@ int main(){
 	int size = guider(&nodes, &Bdata);
 	path_to_file(nodes, size, outfile);
 	
+	free(Bdata.P);
+	free(Bdata.Q);
+	free(nodes);
 	fclose(infile);
 	fclose(outfile);
 }
