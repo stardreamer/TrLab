@@ -60,7 +60,7 @@ inline void loader(cycle *inputstruct, FILE *fstream){
 	bufPath=inputstruct->basicpath;
 
 	for(int i=0; i < inputstruct->bplen; ++i,bufPath++){
-		fscanf(fstream, "%i %i", &(bufPath->from), &(bufPath->where));
+		fscanf(fstream, "%i %i %*i", &(bufPath->from), &(bufPath->where));
 		bufPath->from--;
 		bufPath->where--;
 		inputstruct->used[reductor(bufPath->from,bufPath->where,inputstruct->M)] = 1;
@@ -149,12 +149,10 @@ inline int addNode(cycle* cl, path_node *node){
 }
 
 inline void path_to_file(path_node *n_ps_Pointer, int size, FILE *outfile){
-	path_node* localpointer;
-
-	localpointer = n_ps_Pointer;
-	
-	for(int i = 0; i < size; ++i,localpointer++)
-		fprintf(outfile,"%i %i\n", localpointer->from+1, localpointer->where+1);
+	fprintf(outfile, "%i\n", size);
+	fprintf(outfile,"%i %i\n", n_ps_Pointer[size-1].from+1, n_ps_Pointer[size-1].where+1);
+	for(int i = 0; i <= size-2; ++i)
+		fprintf(outfile,"%i %i\n", n_ps_Pointer[i].from+1, n_ps_Pointer[i].where+1);
 	
 }
 
