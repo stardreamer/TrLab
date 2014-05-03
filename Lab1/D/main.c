@@ -23,7 +23,7 @@ typedef struct{
 		bplen - length of basic path
 		plen - length of new path
 		ulen -length of used
-		cunode - current node
+		curnode - current node
 		used - array of freedom
 		path - new path
 		basicpath - basic path
@@ -31,6 +31,8 @@ typedef struct{
 	int i0,j0;
 	int M,N,bplen,plen,ulen;
 	int *used;
+	int *cost;
+	int opt;
 	path_node curnode;
 	path_node *path;
 	path_node *basicpath;
@@ -44,24 +46,33 @@ inline void loader(cycle *inputstruct, FILE *fstream) __attribute__((always_inli
 inline int addNode(cycle* cl, path_node *node); //resize and add
 inline void path_to_file(cycle *cl, FILE *outfile) __attribute__((always_inline)); //write results to file
 inline path_node* findnode(path_node *cl, int len, int from, int where) __attribute__((always_inline));
+inline int checkOpt(cycle *cl) __attribute__((always_inline));
+inline int* getprice(cycle* cl) __attribute__((always_inline));
 
 inline void loader(cycle *inputstruct, FILE *fstream){
 	path_node *bufPath;
 	fscanf(fstream, "%i %i", &(inputstruct->N), &(inputstruct->M));
-	fscanf(fstream, "%i %i", &(inputstruct->i0), &(inputstruct->j0));
 	
-	inputstruct->i0--;
-	inputstruct->j0--;
-	inputstruct->curnode.from = inputstruct->i0;
-	inputstruct->curnode.where = inputstruct->j0;
 	inputstruct->curnode.amount = 0;
 	inputstruct->plen = 0;
 	inputstruct->bplen = (inputstruct->M + inputstruct->N - 1);
 	inputstruct->ulen = inputstruct->M * inputstruct->N;
 	inputstruct->basicpath = (path_node*)malloc(inputstruct->bplen*sizeof(path_node));
 	inputstruct->used = (int*)calloc(inputstruct->ulen, sizeof(int));
+	inputstruct->cost = (int*)malloc(inputstruct->ulen * sizeof(int));	
 	bufPath=inputstruct->basicpath;
 
+	int *bufcost = inputstruct->cost;
+	for(int i=0; i< inputstruct->ulen; ++i, bufcost++)
+		fscanf(fstream, "%i", bufcost);
+	
+	
+	fscanf(fstream, "%i %i", &(inputstruct->i0), &(inputstruct->j0));	
+	inputstruct->i0--;
+	inputstruct->j0--;
+	inputstruct->curnode.from = inputstruct->i0;
+	inputstruct->curnode.where = inputstruct->j0;
+	
 	for(int i=0; i < inputstruct->bplen; ++i,bufPath++){
 		fscanf(fstream, "%i %i %i", &(bufPath->from), &(bufPath->where), &(bufPath->amount));
 		bufPath->from--;
@@ -151,23 +162,41 @@ inline int addNode(cycle* cl, path_node *node){
 }
 
 inline void path_to_file(cycle *cl, FILE *outfile){
-	path_node* local;	
-
-	for(int i = 0; i< cl->ulen; ++i){
-		if(i%cl->M==0 && i!=0)
+	path_node *local = NULL;
+	int* sum=NULL;
+	if(checkOpt(cl)){
+		balancer(cl);
+		sum = getprice(cl);
+		fprintf(outfile,"%i\n%i\n",sum[0],sum[1]);
+		for(int i=0;i<cl->ulen;++i){
+		if(i%cl->M == 0 && i!=0)
 			fprintf(outfile,"\n");
-		if(cl->used[i]==2){
-			local = findnode(cl->path,cl->plen,i/cl->M,i%cl->M);
-			if(local != NULL)
-				fprintf(outfile,"%i ", (*local).amount);
-			else
-				fprintf(outfile,"%i ", 5);
-			
+		switch(cl->used[i]){
+			case 1:
+				fprintf(outfile,"%i ",(*findnode(cl->basicpath, cl->bplen, i/cl->M, i%cl->M) ).amount );
+			break;
+			case 2:
+				fprintf(outfile,"%i ",(*findnode(cl->path, cl->plen, i/cl->M, i%cl->M) ).amount );
+			break;
+			case 0:
+				fprintf(outfile,"%i ",0);
+			break;
+			}
 		}
-		else	
-			fprintf(outfile,"%i ", 0);
 	}
-	
+	else{
+		sum = getprice(cl);
+		fprintf(outfile,"%i\n%i\n",sum[0],sum[0]);
+		for(int i=0;i<cl->ulen;++i){
+			if(i%cl->M == 0 && i!=0)
+				fprintf(outfile,"\n");
+			local = findnode(cl->basicpath, cl->bplen, i/cl->M, i%cl->M);
+			if(local != NULL)
+				fprintf(outfile,"%i ",(*local).amount );
+			else
+				fprintf(outfile,"%i ",0);
+		}
+	}
 }
 
 inline int reductor(int i,int j,int l){
@@ -187,21 +216,57 @@ inline path_node* findnode(path_node *cl, int len, int from, int where) {
 inline int balancer(cycle* cl){
 	int minimum = INT_MAX;
 
-	for(int i=cl->plen-1, j=0; i>=0, j<cl->plen; i--, j++){
+
+	for(int i=cl->plen-1, j=0; i>=0 && j<cl->plen; i--, j++){
 		if(j%2!=0)
 			if(cl->path[i].amount < minimum)
 				minimum = cl->path[i].amount;
 
 	}
 
-	for(int i=cl->plen-1, j=0; i>=0, j<cl->plen; i--, j++){
+	for(int i=cl->plen-1, j=0; i>=0 && j<cl->plen; i--, j++){
 		if(j%2==0)
 			cl->path[i].amount+= minimum;
 		else
 			cl->path[i].amount-= minimum;
 	}
+		
+	return 0;
 }
 
+inline int* getprice(cycle* cl){
+	int* sum = (int *)calloc(2, sizeof(int));
+	for(int i=0; i< cl->bplen; ++i){
+		sum[0]+=cl->basicpath[i].amount*cl->cost[reductor(cl->basicpath[i].from, cl->basicpath[i].where, cl->M)];
+	}
+	
+	for(int i=0;i<cl->ulen;++i){
+		switch(cl->used[i]){
+			case 1:
+				sum[1]+=(*findnode(cl->basicpath, cl->bplen, i/cl->M, i%cl->M) ).amount*cl->cost[reductor(i/cl->M, i%cl->M, cl->M)];
+			break;
+			case 2:
+				sum[1]+=(*findnode(cl->path, cl->plen, i/cl->M, i%cl->M) ).amount*cl->cost[reductor(i/cl->M, i%cl->M, cl->M)];
+			break;
+
+			}
+		}
+		
+	return sum;
+}
+
+inline int checkOpt(cycle *cl){
+	int sum = 0;
+	
+	for(int i=cl->plen-1, j=0; i>=0 && j<cl->plen; i--, j++){
+		if(j%2==0)
+			sum += cl->cost[reductor(cl->path[i].from, cl->path[i].where, cl->M)];
+		else
+			sum -= cl->cost[reductor(cl->path[i].from, cl->path[i].where, cl->M)];
+	}
+	cl->opt = (sum < 0);
+	return (sum < 0);
+}
 int main(){
 	
 	FILE *infile, *outfile;
@@ -220,7 +285,6 @@ int main(){
 		return UNABLE_TO_FIND_PATH;
 	}
 
-	balancer(&(curcyc));
 	path_to_file(&curcyc, outfile);
 		
 	free(curcyc.basicpath);
